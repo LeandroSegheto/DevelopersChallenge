@@ -1,0 +1,265 @@
+﻿<!DOCTYPE html>
+<html ng-app="app">
+<head>
+    <meta charset="utf-8" />
+    <title>Game Control</title>
+    
+    <link rel="stylesheet" href="../../Content/bootstrap.css">
+    <link rel="stylesheet" href="../font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../css/Menu.css">
+    <link rel="stylesheet" href="../css/Pages.css">
+    <script src="../../Scripts/jquery-3.1.1.min.js"></script>
+    <script src="../../Scripts/bootstrap.min.js"></script>
+    <script src="../js/Menu.js"></script>     
+        
+    <script src="../../Scripts/angular.min.js"></script>
+
+    <script type="text/javascript">
+        
+        var app = angular.module('app', []);
+
+        app.controller('match', function ($scope, $http) {
+            
+            $scope.listTournament = function () {
+                $http.get("http://localhost:54030/api/tournament/list")
+                    .then(function (list) {
+                        $scope.tournaments = list.data;
+                    })
+                    .catch(function (e) {
+                        alert(e.data);
+                    });
+            };
+            
+            $scope.listMatch = function () {                
+                $http.get("http://localhost:54030/api/match/list")
+                    .then(function (list) {
+                        $scope.matchs = list.data;
+                    })
+                    .catch(function (e) {
+                        alert(e.data);
+                    });
+            };
+            
+            $scope.editTournament = function () {
+                $http.put("http://localhost:54030/api/tournament/edit", $scope.model)
+                    .then(function (msg) {
+                        $scope.listTournament();
+                    })
+                    .catch(function (e) {
+                        alert("Error: " + e.data);
+                    });
+            };
+
+            $scope.startTournament = function (id) {                
+                $http.get("http://localhost:54030/api/tournament/getbyid?id=" + id)
+                    .then(function (tournament) {
+                        $scope.model = tournament.data;
+                        $scope.model.Start = true;
+                        $scope.editTournament();                        
+                        $scope.createMatch(id)
+                    })
+                    .catch(function (e) {
+                        alert("Error: " + e.data);
+                    });
+            };
+
+            $scope.endTournament = function (id) {
+                $http.get("http://localhost:54030/api/tournament/getbyid?id=" + id)
+                    .then(function (tournament) {
+                        $scope.model = tournament.data;
+                        $scope.model.Start = false;
+                        $scope.editTournament(); 
+                        $scope.deleteMatch(id);
+                    })
+                    .catch(function (e) {
+                        alert("Error: " + e.data);
+                    });
+            };   
+
+            $scope.createMatch = function (id) {                
+                $http.post("http://localhost:54030/api/match/creatematch?tournament_ID=" + id)
+                    .then(function (list) {
+                        $scope.listMatch();
+                    })
+                    .catch(function (e) {
+                        alert("Error: " + e.data);
+                    });
+            };
+
+            $scope.deleteMatch = function (id) {
+                $http.delete("http://localhost:54030/api/match/deletematch?tournament_ID=" + id)
+                    .then(function (msg) {
+                        $scope.listMatch();
+                    })
+                    .catch(function (e) {
+                        alert("Error: " + e.data);
+                    });
+            };
+
+            $scope.finishMatch = function (id, value1, value2) {                
+                $http.get("http://localhost:54030/api/match/getbyid?id=" + id)
+                    .then(function (match) {
+                        $scope.model = match.data;                        
+                        $scope.model.Score1 = value1;
+                        $scope.model.Score2 = value2;                            
+                        $scope.editMatch();                        
+                    })
+                    .catch(function (e) {
+                        alert("Error:" + e.data);
+                    });
+            };
+
+            $scope.editMatch = function () {
+                $http.put("http://localhost:54030/api/match/editmatch", $scope.model)
+                    .then(function (msg) {
+                        $scope.listMatch();
+                        $scope.expandMatch($scope.model.Tournament_ID);
+                    })
+                    .catch(function (e) {
+                        alert("Error:" + e.data);
+                    });
+            };
+
+            $scope.expandMatch = function (id) {
+                $http.post("http://localhost:54030/api/match/expandmatch?tournament_ID=" + id)
+                    .then(function (list) {
+                        $scope.listMatch();
+                    })
+                    .catch(function (e) {
+                        alert("Error: " + e.data);
+                    });
+            };
+
+        });        
+
+    </script>
+
+</head>
+<body ng-controller="match">
+    <div class="home">  
+        <div class="tournament"> <a href="../../Views/Tournament/Tournament.html"> <i class="fa fa-empire fa-2x"> </i> </a> </div>
+        <div class="team"> <a href="../../Views/Team/Team.html"> <i class="fa fa-group fa-2x"> </i> </a> </div>
+        <div class="player"> <a href="../../Views/Player/Player.html"> <i class="fa fa-male fa-2x"> </i> </a> </div>
+        <div class="match"> <a href="../../Views/Match/Match.html"> <i class="fa fa-gamepad fa-2x"> </i> </a> </div>
+        <div class="init"> <i class="fa fa-ra fa-3x"> </i> </div>
+    </div>
+    
+    <div class="total">
+        <div id="exibir">
+                    
+            <h1> Match </h1>
+
+            <form class="form-horizontal" ng-init="listTournament()">
+                <fieldset>   
+                    
+                    <table class="table table-hover">
+
+                        <thead>
+                            <tr>                                
+                                <th></th>
+                                <th></th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <tr ng-repeat="t in tournaments">                                
+                                <td>{{t.Name}}</td>
+                                <td>
+                                    <button class="btn btn-success btn-sm" 
+                                            ng-show="!t.Start"
+                                            ng-click="startTournament(t.Tournament_ID)">
+                                        Start Tournament
+                                    </button>                                    
+
+                                    <button class="btn btn-danger btn-sm"
+                                            ng-show="t.Start"
+                                            ng-click="endTournament(t.Tournament_ID)">
+                                        End Tournament
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+
+                        <tfooter>
+                            <tr></tr>
+                        </tfooter>
+
+                    </table>
+
+                    <div ng-repeat="t in tournaments">
+
+                        <div ng-show="t.Start" ng-init="listMatch()">
+
+                            <h3>{{t.Name}}</h3>
+                            
+                            <div ng-repeat="m in matchs | filter:{ Tournament_ID: t.Tournament_ID }">
+                                <form class="form-horizontal">
+                                    <fieldset>
+                                        
+                                        <div class="form-inline">
+
+                                            <div class="input-group col-md-3 text-center">
+                                                <h4>{{m.Team1}}</h4>
+                                            </div>
+
+                                            <div class="input-group col-md-2">
+                                                <span class="input-group-btn">
+                                                    <button class="btn btn-default value-control"                                                             
+                                                            ng-click="value1=value1-1">                                                            
+                                                        <span class="glyphicon glyphicon-minus"></span>
+                                                    </button>
+                                                </span>
+                                                <input type="text"class="form-control" 
+                                                       ng-model="value1" ng-init="value1=m.Score1">
+                                                <span class="input-group-btn">
+                                                    <button class="btn btn-default value-control"                                                             
+                                                            ng-click="value1=value1+1">
+                                                        <span class="glyphicon glyphicon-plus"></span>
+                                                    </button>
+                                                </span>
+                                            </div>
+
+                                            <div class="input-group col-md-1 text-center">
+                                                <h4>X</h4>
+                                            </div>
+
+                                            <div class="input-group col-md-2">                                                
+                                                <span class="input-group-btn">
+                                                    <button class="btn btn-default value-control" 
+                                                            ng-click="value2=value2-1">
+                                                        <span class="glyphicon glyphicon-minus"></span>
+                                                    </button>
+                                                </span>                                                
+                                                <input type="text" class="form-control" 
+                                                       ng-model="value2" ng-init="value2=m.Score2">
+                                                <span class="input-group-btn">
+                                                    <button class="btn btn-default value-control" 
+                                                            ng-click="value2=value2+1">
+                                                        <span class="glyphicon glyphicon-plus"></span>
+                                                    </button>
+                                                </span>
+                                            </div>
+
+                                            <div class="input-group col-md-3 text-center">
+                                                <h4>{{m.Team2}}</h4>
+                                            </div>
+
+                                            <button class="btn btn-success btn-sm" ng-click="finishMatch(m.Match_ID,value1,value2)">Finish</button>
+
+                                        </div>
+
+                                    </fieldset>
+                                </form>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </fieldset>
+            </form>
+            
+        </div>
+    </div>
+</body>
+</html>

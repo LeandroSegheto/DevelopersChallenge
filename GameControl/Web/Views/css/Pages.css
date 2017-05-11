@@ -1,0 +1,15 @@
+body {  
+    margin: 0;
+    background-color: #000;
+}
+
+.total {
+    width: 1000px;
+    margin: auto;
+}
+
+#exibir {
+    float: right;
+    color: #fff;
+    width: 900px;
+}

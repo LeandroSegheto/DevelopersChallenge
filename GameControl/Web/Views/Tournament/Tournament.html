@@ -1,0 +1,258 @@
+﻿<!DOCTYPE html>
+<html ng-app="app">
+<head>
+    <meta charset="utf-8" />
+    <title>Game Control</title>
+    
+    <link rel="stylesheet" href="../../Content/bootstrap.css">
+    <link rel="stylesheet" href="../font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../css/Menu.css">
+    <link rel="stylesheet" href="../css/Pages.css">
+    <script src="../../Scripts/jquery-3.1.1.min.js"></script>
+    <script src="../../Scripts/bootstrap.min.js"></script>
+    <script src="../js/Menu.js"></script>
+    
+    <script src="../../Scripts/angular.min.js"></script>
+
+    <script type="text/javascript">
+
+        var app = angular.module('app', []);
+
+        app.controller('tournament', function ($scope, $http) {
+
+            $scope.listTeam = function () {
+                $http.get("http://localhost:54030/api/team/list", $scope.model)
+                    .then(function (list) {
+                        $scope.teams = list.data;
+                    })
+                    .catch(function (e) {
+                        alert(e.data);
+                    });
+            };
+
+            $scope.listTournament = function () {                
+                $http.get("http://localhost:54030/api/tournament/list", $scope.model)
+                    .then(function (list) {                        
+                        $scope.tournaments = list.data;
+                    })
+                    .catch(function (e) {
+                        alert(e.data);
+                    });                
+            };
+                        
+            $scope.getTournament = function (id) {                   
+                $http.get("http://localhost:54030/api/tournament/getbyid?id=" + id)
+                    .then(function (tournament) {                        
+                        $scope.model = tournament.data;
+                    })
+                    .catch(function (e) {                        
+                        alert("Error: " + e.data);
+                    });
+            };
+
+            $scope.clearModel = function () {
+                $scope.model = {};
+            }
+            
+            $scope.insertTournament = function () { 
+                $scope.model.Start = false;
+                $http.post("http://localhost:54030/api/tournament/add", $scope.model)
+                    .then(function (msg) {                        
+                        $scope.listTournament();                        
+                    })
+                    .catch(function (e) {
+                        alert("Error: " + e.data);
+                    });
+            };
+            
+            $scope.editTournament = function () {                
+                $http.put("http://localhost:54030/api/tournament/edit", $scope.model)
+                    .then(function (msg) {                        
+                        $scope.listTournament();
+                    })
+                    .catch(function (e) {
+                        alert("Error: " + e.data);
+                    });
+            };
+
+            $scope.deleteTournament = function () {
+                $http.delete("http://localhost:54030/api/tournament/delete?id=" + $scope.model.Tournament_ID)
+                    .then(function (msg) {                        
+                        $scope.listTournament();
+                    })
+                    .catch(function (e) {
+                        alert("Error: " + e.data);
+                    });
+            };                        
+
+        });
+
+    </script>
+    
+</head>
+<body ng-controller="tournament">
+    <div class="home">  
+        <div class="tournament"> <a href="../../Views/Tournament/Tournament.html"> <i class="fa fa-empire fa-2x"> </i> </a> </div>
+        <div class="team"> <a href="../../Views/Team/Team.html"> <i class="fa fa-group fa-2x"> </i> </a> </div>
+        <div class="player"> <a href="../../Views/Player/Player.html"> <i class="fa fa-male fa-2x"> </i> </a> </div>
+        <div class="match"> <a href="../../Views/Match/Match.html"> <i class="fa fa-gamepad fa-2x"> </i> </a> </div>
+        <div class="init"> <i class="fa fa-ra fa-3x"> </i> </div>
+    </div>
+    
+    <div class="total">
+        <div id="exibir">
+                    
+            <h1> Tournament </h1>
+            <button class="btn btn-primary btn-sm" data-target="#insertmodal" data-toggle="modal" ng-click="clearModel()"> Adicionar </button>
+            
+            <form class="form-horizontal">
+                <fieldset>
+                    
+                    <table class="table table-hover" ng-init="listTournament();listTeam()">
+                        
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Number of Teams</th>                                
+                                <th></th>
+                            </tr>
+                        </thead>
+                        
+                        <tbody>
+                            <tr ng-repeat="t in tournaments">
+                               <td>{{t.Name}}</td>
+                               <td>{{t.NumberOfTeams}}</td>                               
+                               <td>
+                                    <button class="btn btn-primary btn-sm"
+                                            data-target="#editmodal"
+                                            data-toggle="modal"
+                                            ng-click="getTournament(t.Tournament_ID)">
+                                        Edit
+                                    </button>
+
+                                    <button class="btn btn-danger btn-sm"
+                                            data-target="#deletemodal"
+                                            data-toggle="modal"
+                                            ng-click="getTournament(t.Tournament_ID)">
+                                        Del
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                        
+                        <tfooter>
+                            <tr>
+                                <td colspan="1">Registers: {{tournaments.length}}</td>
+                            </tr>
+                        </tfooter>
+                        
+                    </table>
+                    
+                </fieldset>
+            </form>
+            
+        </div>
+    </div>
+    
+    <div id="insertmodal" class="modal fade">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary">
+                    <h3>Tournament (Insert)</h3>
+                </div>
+                <div class="modal-body">
+
+                    <form class="form-horizontal">
+                        <fieldset>
+
+                            <div class="form-group">
+                                <label class="col-md-4 control-label" for="name">Name</label>
+                                <div class="col-md-5">
+                                    <input id="name" name="name" type="text" placeholder="Name" class="form-control input-md" ng-model="model.Name">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-md-4 control-label" for="number">Number Of Teams</label>
+                                <div class="col-md-3">
+                                    <input id="number" name="number" type="text" placeholder="Number" class="form-control input-md" ng-model="model.NumberOfTeams">
+                                </div>
+                            </div>
+
+                        </fieldset>
+                    </form>
+
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" data-dismiss="modal"
+                            ng-click="insertTournament()">
+                        Insert
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="editmodal" class="modal fade">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary">
+                    <h3>Tournament (Update)</h3>
+                </div>
+                <div class="modal-body">
+
+                    <form class="form-horizontal">
+                        <fieldset>
+
+                            <div class="form-group">
+                                <label class="col-md-4 control-label" for="name">Name</label>
+                                <div class="col-md-5">
+                                    <input id="name" name="name" type="text" placeholder="Name" class="form-control input-md" ng-model="model.Name">
+                                </div>
+                            </div> 
+                            
+                            <div class="form-group">
+                                <label class="col-md-4 control-label" for="number">Number Of Teams</label>
+                                <div class="col-md-3">
+                                    <input id="number" name="number" type="text" placeholder="Number" class="form-control input-md" ng-model="model.NumberOfTeams">
+                                </div>
+                            </div>
+
+                        </fieldset>
+                    </form>
+
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" data-dismiss="modal"
+                            ng-click="editTournament()">
+                        Update
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="deletemodal" class="modal fade">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger">
+                    <h3>Tournament (Delete)</h3>
+                </div>
+                <div class="modal-body">
+
+                    Name: <strong>{{model.Name}}</strong> <br />
+                    Number Of Teams: <strong>{{model.NumberOfTeams}}</strong> <br />
+                    
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-danger" data-dismiss="modal"
+                            ng-click="deleteTournament()">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>    
+    
+</body>
+</html>
